@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+backend/uvicorn.out.log
+backend/uvicorn.err.log
+
+# TSRD cache (generated offline; can be large) - keep dir, ignore contents
+backend/data/cache/*
+!backend/data/cache/.gitkeep
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+frontend/.next/
+frontend/node_modules/
+npm-debug.log*
+frontend/next.err.log
+frontend/next.out.log
+
+# Env / secrets
+.env
+.env.local
+*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

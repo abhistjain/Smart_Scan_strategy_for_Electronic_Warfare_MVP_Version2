@@ -1,0 +1,33 @@
+{
+  "p01_range": [
+    0.01,
+    0.08
+  ],
+  "p10_range": [
+    0.15,
+    0.45
+  ],
+  "periodic_period_range": [
+    5,
+    10
+  ],
+  "periodic_dwell_range": [
+    1,
+    3
+  ],
+  "periodic_jitter": 1,
+  "hopper_hopset_range": [
+    3,
+    6
+  ],
+  "hopper_dwell_range": [
+    1,
+    2
+  ],
+  "duty_cycle_range": [
+    0.0003,
+    0.0007
+  ],
+  "hop_rate_hint": 0.9767,
+  "source": "tsrd_stub"
+}

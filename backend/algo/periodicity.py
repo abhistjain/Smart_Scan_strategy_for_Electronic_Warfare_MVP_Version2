@@ -93,7 +93,9 @@ class PeriodicityDetector:
         ang_freqs = 2.0 * np.pi / periods
         y = np.ones_like(times)
         y = y - y.mean() if y.size > 1 else y  # centre (LS assumes zero-mean)
-        if not _HAVE_SCIPY or np.allclose(y, 0.0):
+        # With very short history, LS periodogram is unstable — use gap fallback.
+        history_too_short = span < 2.0 * self.min_period
+        if not _HAVE_SCIPY or np.allclose(y, 0.0) or history_too_short:
             # Fallback: dominant inter-hit gap.
             gaps = np.diff(times)
             gaps = gaps[gaps > 0]

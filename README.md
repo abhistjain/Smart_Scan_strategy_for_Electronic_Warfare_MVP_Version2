@@ -1,15 +1,15 @@
-# Smart Scan Strategy for Electronic Warfare — ML-based ES Receiver Scheduler
+# Smart Scan Strategy for Electronic Warfare ML-based ES Receiver Scheduler
 
 **SIH26055** · An Electronic Support (ES) receiver scheduler that learns *where*
 and *when* to look across a wide RF spectrum **with no prior reliable
-intelligence** on the emitters — minimising intercept time and maximising the
+intelligence** on the emitters  minimising intercept time and maximising the
 interception rate against periodic (spatially-scanning) and frequency-agile
 emitters.
 
 It combines a **Bayesian belief filter**, **Thompson sampling** (to learn
 unknown channel dynamics online), a closed-form **Whittle-index** restless-bandit
 scheduler, and **Lomb-Scargle / von-Mises periodicity detection** for
-"intercept-ahead" tracking — and shows it beating the incumbent open-loop sweep
+"intercept-ahead" tracking  and shows it beating the incumbent open-loop sweep
 (and random / greedy baselines) live, on the **identical environment
 trajectory**, in both a controllable **Synthetic** mode and a **Real Data** mode
 derived from the Turing Synthetic Radar Dataset (TSRD).
@@ -100,7 +100,7 @@ python -m venv .venv
 pip install -r backend/requirements.txt
 ```
 
-Build a small **Real Data** cache (offline, no network needed — realistic fake
+Build a small **Real Data** cache (offline, no network needed  realistic fake
 PDWs run through the exact same binning pipeline as the real dataset):
 
 ```bash
@@ -132,7 +132,7 @@ tab), and hit **Launch Simulation →**.
 ### Runs fully offline
 
 If no TSRD cache is present, the **Real Data** tab is automatically disabled with
-a clear message and the app runs entirely in **Synthetic** mode — the dataset is
+a clear message and the app runs entirely in **Synthetic** mode  the dataset is
 never a hard runtime dependency.
 
 ---
@@ -140,7 +140,7 @@ never a hard runtime dependency.
 ## The TSRD dataset (Real Data mode)
 
 Real Data mode replays a **pre-processed occupancy grid** built offline from the
-**Turing Synthetic Radar Dataset (TSRD)** — specifically its **Stare Mode**
+**Turing Synthetic Radar Dataset (TSRD)**  specifically its **Stare Mode**
 pulse trains, which observe the whole 0–18 GHz spectrum simultaneously and are
 the closest real-world analogue to the problem statement's "ground-truth status
 of each band at each time slot".
@@ -176,7 +176,7 @@ The script:
 5. Marks each `(band, slot)` cell **transmit (1)** / **silent (0)** by ToA +
    pulse-width overlap → the **ground-truth occupancy grid**.
 6. Extracts per-emitter-cluster stats (dominant PRI/period, hop rate/range, duty
-   cycle) via simple frequency+PRI clustering — *not* a full deinterleaving
+   cycle) via simple frequency+PRI clustering  *not* a full deinterleaving
    solution (that is a different challenge), just enough to (a) parameterise the
    Synthetic generator's defaults and (b) validate periodicity detection.
 7. Caches everything to `backend/data/cache/` (git-ignored).
@@ -186,10 +186,10 @@ If `--real` fails (no token / no network), it **automatically falls back to
 
 > **Note on noise:** the raw TSRD data has no artificial sensor noise. When our
 > scheduler "scans" a band we add our own `P_miss` / `P_fa` on top to model *our*
-> receiver's imperfection — documented in `sim/tsrd_environment.py` so it is not
+> receiver's imperfection  documented in `sim/tsrd_environment.py` so it is not
 > confused with the dataset's native fidelity.
 
-**Citation:** Gunn, Hosford, Jones, Zeitler, Groves, Nockles — *"The Turing
+**Citation:** Gunn, Hosford, Jones, Zeitler, Groves, Nockles  *"The Turing
 Synthetic Radar Dataset: A dataset for pulse deinterleaving."* License:
 Apache-2.0. Companion utilities:
 `github.com/alan-turing-institute/turing-deinterleaving-challenge`.
@@ -198,19 +198,19 @@ Apache-2.0. Companion utilities:
 
 ## How the algorithms work (plain language)
 
-**1 · Bayesian belief filter** (`algo/belief_filter.py`) — for every band we keep
+**1 · Bayesian belief filter** (`algo/belief_filter.py`)  for every band we keep
 `b_i(t) = P(band i active | observations so far)`. Each tick we *predict* with the
 Markov model `b ← b·(1−P10) + (1−b)·P01`, and for scanned bands we *update* with
 exact Bayes (denominator written out, no approximation). Unscanned bands evolve by
-prediction only — so we reason about bands we aren't even looking at.
+prediction only  so we reason about bands we aren't even looking at.
 
-**2 · Thompson sampling** (`algo/thompson.py`) — we don't know each band's
+**2 · Thompson sampling** (`algo/thompson.py`)  we don't know each band's
 transition probabilities, so we put `Beta(1,1)` priors on `P01` and `P10`, update
 them from observed consecutive-scan transitions, and **sample** from the
 posteriors each decision epoch. Sampling *is* the exploration mechanism (no ad-hoc
 epsilon-greedy).
 
-**3 · Whittle index** (`algo/whittle_index.py`) — each band gets a scan-priority
+**3 · Whittle index** (`algo/whittle_index.py`)  each band gets a scan-priority
 score from the **closed-form Whittle index** for the 2-state restless bandit
 (Liu & Zhao, 2010, Theorem 2, discounted criterion with β→1). We compute it for
 **all** bands each tick and scan the Top-M. A UCB-style bonus
@@ -218,17 +218,17 @@ score from the **closed-form Whittle index** for the 2-state restless bandit
 online. The index is provably **monotonically increasing in belief** in the
 positively-correlated regime (asserted in tests).
 
-**4 · Intercept-ahead / periodicity** (`algo/periodicity.py`) — a Lomb-Scargle
+**4 · Intercept-ahead / periodicity** (`algo/periodicity.py`)  a Lomb-Scargle
 periodogram (correct for irregular/sparse sampling, which is exactly our
 intermittent-scan setting) finds a dominant period from each band's hit
 timestamps; a von Mises circular fit estimates the expected active phase and a
 confidence. Just before the predicted window, that band's Whittle index is
-boosted — directly addressing "optimally intercept a periodic scan
+boosted  directly addressing "optimally intercept a periodic scan
 receiver/emitter". The predicted next-active time also drives the **average
 intercept time error** metric.
 
 **Baselines** (`algo/baselines.py`): Sequential open-loop sweep (the incumbent),
-Random/round-robin, and Greedy recent-hit — all run on the identical trajectory.
+Random/round-robin, and Greedy recent-hit  all run on the identical trajectory.
 
 ---
 
@@ -236,14 +236,14 @@ Random/round-robin, and Greedy recent-hit — all run on the identical trajector
 
 Computed per strategy, live (`metrics/metrics.py`):
 
-- **Pd** — intercepted active cells / all truly-active `(band, slot)` cells.
-- **Pfa** — false alarms / scans of truly-idle bands.
-- **Sensitivity** — detections / scans of truly-active bands (1 − miss rate),
+- **Pd**  intercepted active cells / all truly-active `(band, slot)` cells.
+- **Pfa**  false alarms / scans of truly-idle bands.
+- **Sensitivity**  detections / scans of truly-active bands (1 − miss rate),
   reported distinctly from Pd.
-- **Average Intercept Rate** — successful intercepts per simulated tick.
-- **Average Reward/Cost** — running mean of `R_hit − C_dwell − C_miss_penalty`.
-- **% Correct Predictions** — Top-M scans matching ground-truth active state.
-- **Average Intercept Time Error** — MAE between predicted and actual next-active
+- **Average Intercept Rate**  successful intercepts per simulated tick.
+- **Average Reward/Cost**  running mean of `R_hit − C_dwell − C_miss_penalty`.
+- **% Correct Predictions**  Top-M scans matching ground-truth active state.
+- **Average Intercept Time Error**  MAE between predicted and actual next-active
   tick for periodic emitters (the metric the PS singles out).
 
 ---
@@ -271,7 +271,7 @@ strategy, the `scanned_bands`, `hits`, `beliefs` (smart), and `metrics`, plus th
 
 ## Testing & scientific validation
 
-Unit tests (no network / no HF credentials required — CI-safe):
+Unit tests (no network / no HF credentials required  CI-safe):
 
 ```bash
 cd backend

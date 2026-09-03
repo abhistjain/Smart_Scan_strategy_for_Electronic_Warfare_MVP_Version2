@@ -15,7 +15,7 @@ import os
 from dataclasses import dataclass
 
 # Small, fast default for narration/summarisation. Overridable via env.
-DEFAULT_MODEL = "claude-3-5-haiku-latest"
+DEFAULT_MODEL = "claude-haiku-4-5"
 
 
 @dataclass

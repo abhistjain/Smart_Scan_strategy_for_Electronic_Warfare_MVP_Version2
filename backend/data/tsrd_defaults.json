@@ -26,8 +26,8 @@
   ],
   "duty_cycle_range": [
     0.0003,
-    0.0007
+    0.0008
   ],
-  "hop_rate_hint": 0.9767,
+  "hop_rate_hint": 0.9748,
   "source": "tsrd_stub"
 }

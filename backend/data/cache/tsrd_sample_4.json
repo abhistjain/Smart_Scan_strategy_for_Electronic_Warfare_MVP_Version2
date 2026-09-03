@@ -1,0 +1,239 @@
+{
+  "subband_mhz": [
+    9000.118,
+    9500.118
+  ],
+  "band_edges_mhz": [
+    9000.118,
+    9020.951,
+    9041.784,
+    9062.618,
+    9083.451,
+    9104.284,
+    9125.118,
+    9145.951,
+    9166.784,
+    9187.618,
+    9208.451,
+    9229.284,
+    9250.118,
+    9270.951,
+    9291.784,
+    9312.618,
+    9333.451,
+    9354.284,
+    9375.118,
+    9395.951,
+    9416.784,
+    9437.618,
+    9458.451,
+    9479.284,
+    9500.118
+  ],
+  "slot_us": 2000.0,
+  "n_slots": 500,
+  "n_bands": 24,
+  "t0_us": 24.65735035152107,
+  "emitter_stats": [
+    {
+      "band": 0,
+      "freq_center_mhz": 9010.534,
+      "n_pulses": 572,
+      "dominant_pri_us": 1504.79,
+      "dominant_period_slots": 1,
+      "duty_cycle": 0.0005
+    },
+    {
+      "band": 1,
+      "freq_center_mhz": 9031.368,
+      "n_pulses": 93,
+      "dominant_pri_us": 7245.237,
+      "dominant_period_slots": 4,
+      "duty_cycle": 0.0003
+    },
+    {
+      "band": 2,
+      "freq_center_mhz": 9052.201,
+      "n_pulses": 82,
+      "dominant_pri_us": 8526.054,
+      "dominant_period_slots": 4,
+      "duty_cycle": 0.0003
+    },
+    {
+      "band": 3,
+      "freq_center_mhz": 9073.034,
+      "n_pulses": 87,
+      "dominant_pri_us": 7491.636,
+      "dominant_period_slots": 4,
+      "duty_cycle": 0.0003
+    },
+    {
+      "band": 4,
+      "freq_center_mhz": 9093.868,
+      "n_pulses": 83,
+      "dominant_pri_us": 8770.638,
+      "dominant_period_slots": 4,
+      "duty_cycle": 0.0003
+    },
+    {
+      "band": 5,
+      "freq_center_mhz": 9114.701,
+      "n_pulses": 92,
+      "dominant_pri_us": 7383.995,
+      "dominant_period_slots": 4,
+      "duty_cycle": 0.0003
+    },
+    {
+      "band": 6,
+      "freq_center_mhz": 9135.534,
+      "n_pulses": 294,
+      "dominant_pri_us": 4327.11,
+      "dominant_period_slots": 2,
+      "duty_cycle": 0.001
+    },
+    {
+      "band": 7,
+      "freq_center_mhz": 9156.368,
+      "n_pulses": 61,
+      "dominant_pri_us": 10340.866,
+      "dominant_period_slots": 5,
+      "duty_cycle": 0.0002
+    },
+    {
+      "band": 8,
+      "freq_center_mhz": 9177.201,
+      "n_pulses": 302,
+      "dominant_pri_us": 2522.475,
+      "dominant_period_slots": 1,
+      "duty_cycle": 0.0005
+    },
+    {
+      "band": 9,
+      "freq_center_mhz": 9198.034,
+      "n_pulses": 545,
+      "dominant_pri_us": 1417.834,
+      "dominant_period_slots": 1,
+      "duty_cycle": 0.0005
+    },
+    {
+      "band": 10,
+      "freq_center_mhz": 9218.868,
+      "n_pulses": 68,
+      "dominant_pri_us": 10608.479,
+      "dominant_period_slots": 5,
+      "duty_cycle": 0.0002
+    },
+    {
+      "band": 11,
+      "freq_center_mhz": 9239.701,
+      "n_pulses": 855,
+      "dominant_pri_us": 845.617,
+      "dominant_period_slots": 1,
+      "duty_cycle": 0.0008
+    },
+    {
+      "band": 12,
+      "freq_center_mhz": 9260.534,
+      "n_pulses": 224,
+      "dominant_pri_us": 4166.935,
+      "dominant_period_slots": 2,
+      "duty_cycle": 0.0009
+    },
+    {
+      "band": 13,
+      "freq_center_mhz": 9281.368,
+      "n_pulses": 87,
+      "dominant_pri_us": 8368.938,
+      "dominant_period_slots": 4,
+      "duty_cycle": 0.0003
+    },
+    {
+      "band": 14,
+      "freq_center_mhz": 9302.201,
+      "n_pulses": 597,
+      "dominant_pri_us": 1003.193,
+      "dominant_period_slots": 1,
+      "duty_cycle": 0.0005
+    },
+    {
+      "band": 15,
+      "freq_center_mhz": 9323.034,
+      "n_pulses": 539,
+      "dominant_pri_us": 1451.977,
+      "dominant_period_slots": 1,
+      "duty_cycle": 0.0008
+    },
+    {
+      "band": 16,
+      "freq_center_mhz": 9343.868,
+      "n_pulses": 72,
+      "dominant_pri_us": 9879.33,
+      "dominant_period_slots": 5,
+      "duty_cycle": 0.0002
+    },
+    {
+      "band": 17,
+      "freq_center_mhz": 9364.701,
+      "n_pulses": 222,
+      "dominant_pri_us": 3363.301,
+      "dominant_period_slots": 2,
+      "duty_cycle": 0.0004
+    },
+    {
+      "band": 18,
+      "freq_center_mhz": 9385.534,
+      "n_pulses": 375,
+      "dominant_pri_us": 1897.827,
+      "dominant_period_slots": 1,
+      "duty_cycle": 0.0005
+    },
+    {
+      "band": 19,
+      "freq_center_mhz": 9406.368,
+      "n_pulses": 80,
+      "dominant_pri_us": 8720.702,
+      "dominant_period_slots": 4,
+      "duty_cycle": 0.0003
+    },
+    {
+      "band": 20,
+      "freq_center_mhz": 9427.201,
+      "n_pulses": 93,
+      "dominant_pri_us": 8902.634,
+      "dominant_period_slots": 4,
+      "duty_cycle": 0.0003
+    },
+    {
+      "band": 21,
+      "freq_center_mhz": 9448.034,
+      "n_pulses": 462,
+      "dominant_pri_us": 2470.569,
+      "dominant_period_slots": 1,
+      "duty_cycle": 0.0007
+    },
+    {
+      "band": 22,
+      "freq_center_mhz": 9468.868,
+      "n_pulses": 85,
+      "dominant_pri_us": 7810.59,
+      "dominant_period_slots": 4,
+      "duty_cycle": 0.0003
+    },
+    {
+      "band": 23,
+      "freq_center_mhz": 9489.701,
+      "n_pulses": 87,
+      "dominant_pri_us": 6003.708,
+      "dominant_period_slots": 3,
+      "duty_cycle": 0.0003
+    }
+  ],
+  "hop_stats": {
+    "hop_rate": 0.9795,
+    "hop_range_mhz": 499.822
+  },
+  "aoa_available": true,
+  "stub": true,
+  "sample_id": 4,
+  "emitter_count": 24
+}

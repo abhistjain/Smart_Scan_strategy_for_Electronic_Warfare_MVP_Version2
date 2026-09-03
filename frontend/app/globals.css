@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", monospace;
+}
+
+html,
+body {
+  background-color: #0a0e17;
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+/* Faint animated grid / radar-sweep texture behind panels (spec 9.1). */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.glass {
+  background: rgba(15, 21, 36, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-strong {
+  background: rgba(15, 21, 36, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Projector-friendly high-contrast mode (spec 9.4). */
+.high-contrast {
+  --tw-text-opacity: 1;
+}
+.high-contrast .glass,
+.high-contrast .glass-strong {
+  background: rgba(5, 8, 15, 0.95);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.25);
+  border-radius: 4px;
+}
+
+.radar-sweep {
+  background: conic-gradient(
+    from 0deg,
+    rgba(34, 211, 238, 0.18) 0deg,
+    transparent 40deg,
+    transparent 360deg
+  );
+}

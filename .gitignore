@@ -8,9 +8,9 @@ venv/
 backend/uvicorn.out.log
 backend/uvicorn.err.log
 
-# TSRD cache (generated offline; can be large) - keep dir, ignore contents
-backend/data/cache/*
-!backend/data/cache/.gitkeep
+# TSRD cache (generated offline; usually large - this repo commits a small
+# real-data sample so the deployed backend has real data with no HF_TOKEN)
+
 
 # Node / Next.js
 node_modules/

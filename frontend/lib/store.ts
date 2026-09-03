@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type {
   BandInfo,
+  Classification,
   DataSource,
   InitPayload,
   PeriodicityEstimate,
@@ -51,6 +52,10 @@ interface DashboardState {
   periodicity: PeriodicityEstimate[];
   latestHits: number[]; // smart hits this tick (for flash markers)
 
+  // Emitter behaviour classification + priority (v3 add-on).
+  classification: Classification[];
+  selectedBand: number | null;
+
   // UI toggles.
   instructorMode: boolean;
   highContrast: boolean;
@@ -64,6 +69,7 @@ interface DashboardState {
   resetLive: () => void;
   toggle: (key: "instructorMode" | "highContrast" | "soundOn") => void;
   setSpeed: (s: number) => void;
+  setSelectedBand: (b: number | null) => void;
 }
 
 function emptyRates(): Record<StrategyKey, number[]> {
@@ -100,6 +106,9 @@ export const useStore = create<DashboardState>((set) => ({
 
   periodicity: [],
   latestHits: [],
+
+  classification: [],
+  selectedBand: null,
 
   instructorMode: false,
   highContrast: false,
@@ -149,6 +158,7 @@ export const useStore = create<DashboardState>((set) => ({
         rateHistory,
         tickHistory,
         periodicity: p.periodicity,
+        classification: p.classification ?? state.classification,
         latestHits: smart.hits,
         // NB: status is driven by explicit control actions (start/pause/reset),
         // not by tick messages, so the indicator can't be flipped back to
@@ -169,9 +179,12 @@ export const useStore = create<DashboardState>((set) => ({
       tickHistory: [],
       periodicity: [],
       latestHits: [],
+      classification: [],
+      selectedBand: null,
       tick: 0,
     }),
 
   toggle: (key) => set((s) => ({ [key]: !s[key] }) as Partial<DashboardState>),
   setSpeed: (s) => set({ speed: s }),
+  setSelectedBand: (b) => set({ selectedBand: b }),
 }));

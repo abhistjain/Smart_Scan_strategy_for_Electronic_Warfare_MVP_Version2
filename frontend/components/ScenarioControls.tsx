@@ -11,6 +11,7 @@ import {
   startScenario,
   exportUrl,
 } from "@/lib/api";
+import DrdoLogo from "./DrdoLogo";
 
 export default function ScenarioControls({ onAbout }: { onAbout: () => void }) {
   const router = useRouter();
@@ -63,6 +64,7 @@ export default function ScenarioControls({ onAbout }: { onAbout: () => void }) {
       </button>
 
       <div className="flex items-center gap-2">
+        <DrdoLogo size={32} />
         <div className="text-sm font-semibold tracking-tight text-slate-100">
           Smart Scan · EW
         </div>

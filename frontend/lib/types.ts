@@ -32,13 +32,94 @@ export interface PeriodicityEstimate {
   power: number;
 }
 
+export interface Classification {
+  band: number;
+  label: string;
+  short: string;
+  color: string;
+  confidence: number;
+  matched_rule: string;
+  priority: number;
+  urgency: number;
+  analogue_key?: string;
+  analogue_short?: string;
+  analogue_title?: string;
+  analogue_why?: string;
+  analogue_glyph?: string;
+  analogue_color?: string;
+}
+
 export interface TickPayload {
   t: number;
   data_source: DataSource;
   strategies: Record<StrategyKey, StrategyTick>;
   ground_truth: number[];
   periodicity: PeriodicityEstimate[];
+  classification: Classification[];
 }
+
+export interface BandFeatures {
+  band: number;
+  evidence: number;
+  duty_cycle: number;
+  onset_rate: number;
+  periodicity_strength: number;
+  period: number;
+  period_trend: number;
+  bandwidth: number;
+  hop_rate: number;
+  amplitude_stability: number;
+  pulse_width_variance: number;
+}
+
+export interface PriorityBreakdown {
+  belief_term: number;
+  confidence_term: number;
+  urgency_term: number;
+  belief: number;
+  confidence: number;
+  urgency: number;
+}
+
+export interface BandDetail {
+  band: number;
+  label?: string;
+  emitter_type?: string;
+  belief: number;
+  classification: Classification;
+  priority: number;
+  priority_breakdown: PriorityBreakdown;
+  features: BandFeatures;
+  periodicity: PeriodicityEstimate | null;
+}
+
+export interface NarrateResponse {
+  available: boolean;
+  text: string;
+  cached?: boolean;
+  error?: string | null;
+  detail: BandDetail;
+}
+
+export interface ChatResponse {
+  available: boolean;
+  text: string;
+  error?: string | null;
+}
+
+export interface AIStatus {
+  available: boolean;
+  model: string | null;
+  reason: string | null;
+}
+
+export const CLASSIFICATION_DISCLAIMER =
+  "Category labels describe signal behaviour patterns observed in this " +
+  "simulation (pulse regularity, frequency agility, duty cycle) and are " +
+  "illustrative analogues loosely inspired by general EW literature. They are " +
+  "NOT a validated identification-friend-or-foe (IFF) system and must not be " +
+  "treated as real platform identification. This tool performs sensing and " +
+  "classification only \u2014 it never selects weapons or recommends engagement.";
 
 export interface BandInfo {
   index: number;

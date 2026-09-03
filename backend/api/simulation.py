@@ -22,6 +22,8 @@ import numpy as np
 from algo.baselines import GreedyRecentHit, RandomStrategy, SequentialSweep
 from algo.reward import RewardWeights, compute_reward
 from algo.smart_scheduler import SmartScheduler
+from classification.engine import ClassificationEngine
+from classification.priority_score import PriorityWeights
 from metrics.metrics import MetricsAccumulator
 from sim.base_environment import RFEnvironment
 from sim.synthetic_environment import SyntheticEnvironment
@@ -43,6 +45,10 @@ class ScenarioConfig:
     c_miss_penalty: float = 0.5
     beta: float = 0.99
     ucb_c: float = 0.05
+    # Threat Priority Score weights (v3 add-on Section 2.4). Sort-only.
+    w_belief: float = 0.5
+    w_conf: float = 0.2
+    w_urgency: float = 0.3
 
     def to_dict(self) -> dict:
         return {
@@ -59,6 +65,9 @@ class ScenarioConfig:
             "c_miss_penalty": self.c_miss_penalty,
             "beta": self.beta,
             "ucb_c": self.ucb_c,
+            "w_belief": self.w_belief,
+            "w_conf": self.w_conf,
+            "w_urgency": self.w_urgency,
         }
 
 
@@ -103,6 +112,14 @@ class Simulation:
         }
         self.metrics = {k: MetricsAccumulator(self.n_bands) for k in self.STRATEGY_KEYS}
 
+        # Emitter behaviour classification + priority (v3 add-on). Sensing/
+        # presentation only - no weapon/engagement logic (Section 0).
+        self.classifier = ClassificationEngine(
+            self.n_bands,
+            weights=PriorityWeights(cfg.w_belief, cfg.w_conf, cfg.w_urgency),
+        )
+        self.classifier.set_band_hints(self.band_info())
+
         self.t = 0
         self._prev_truth = self.env.ground_truth_state.copy()
         # For smart intercept-time-error: predicted next active tick per band.
@@ -117,6 +134,7 @@ class Simulation:
         for k in self.STRATEGY_KEYS:
             self.metrics[k] = MetricsAccumulator(self.n_bands)
             self.obs_rng[k] = np.random.default_rng(self.cfg.seed + 1000 + self.STRATEGY_KEYS.index(k))
+        self.classifier.reset()
         self.t = 0
         self._prev_truth = self.env.ground_truth_state.copy()
         self._smart_predictions = {}
@@ -136,9 +154,13 @@ class Simulation:
                 self.metrics["smart"].record_time_error(abs(pred - self.t))
 
         strat_payload: dict[str, dict] = {}
+        smart_scanned = np.array([], dtype=np.int64)
+        smart_obs = np.array([], dtype=np.int64)
         for key, strat in self.strategies.items():
             scanned = strat.select(self.t)
             obs = self.env.observe(scanned, self.obs_rng[key])
+            if key == "smart":
+                smart_scanned, smart_obs = scanned, obs
             reward = compute_reward(scanned, obs, truth, self.weights)
             # Predicted-active bands for %-correct = the scanned Top-M set.
             self.metrics[key].update(
@@ -163,12 +185,22 @@ class Simulation:
         # Refresh smart predictions for the next tick's error scoring.
         self._smart_predictions = self.strategies["smart"].predicted_next_active()
 
+        # Update emitter behaviour classification + priority from what the smart
+        # receiver actually observed this tick (operator-available data only).
+        smart_beliefs = self.strategies["smart"].beliefs
+        periodicity = self.strategies["smart"].periodicity_summary()
+        self.classifier.update(
+            self.t, smart_scanned, smart_obs, smart_beliefs,
+            periodicity, self._smart_predictions,
+        )
+
         payload = {
             "t": self.t,
             "data_source": self.cfg.data_source,
             "strategies": strat_payload,
             "ground_truth": truth.astype(int).tolist(),
-            "periodicity": self.strategies["smart"].periodicity_summary(),
+            "periodicity": periodicity,
+            "classification": self.classifier.snapshot(),
         }
         self._prev_truth = truth.copy()
 
@@ -192,3 +224,25 @@ class Simulation:
 
     def metrics_summary(self) -> dict:
         return {k: self.metrics[k].snapshot() for k in self.STRATEGY_KEYS}
+
+    # --------------------------------------------------- classification helpers
+    def band_detail(self, band: int) -> dict:
+        detail = self.classifier.band_detail(band)
+        info = self.env.band_info()[band]
+        detail["label"] = info.label
+        detail["emitter_type"] = info.emitter_type
+        return detail
+
+    def top_bands(self, n: int = 6) -> list[dict]:
+        bands = self.classifier.top_bands(n)
+        infos = self.env.band_info()
+        for d in bands:
+            b = d["band"]
+            d["label"] = infos[b].label
+        return bands
+
+    def set_priority_weights(self, w_belief: float, w_conf: float, w_urgency: float) -> None:
+        self.cfg.w_belief = w_belief
+        self.cfg.w_conf = w_conf
+        self.cfg.w_urgency = w_urgency
+        self.classifier.set_weights(PriorityWeights(w_belief, w_conf, w_urgency))

@@ -62,3 +62,28 @@ class MetricsSummary(BaseModel):
     scenario_id: str
     tick: int
     metrics: dict
+
+
+# --- v3 add-on: classification + AI analyst -------------------------------- #
+
+
+class PriorityWeightsBody(BaseModel):
+    w_belief: float = Field(0.5, ge=0.0)
+    w_conf: float = Field(0.2, ge=0.0)
+    w_urgency: float = Field(0.3, ge=0.0)
+
+
+class NarrateBandBody(BaseModel):
+    scenario_id: str
+    band: int
+    force: bool = False  # bypass the label-change cache
+
+
+class ChatBody(BaseModel):
+    scenario_id: str
+    question: str
+    top_n: int = Field(6, ge=1, le=24)
+
+
+class SummarizeRunBody(BaseModel):
+    scenario_id: str

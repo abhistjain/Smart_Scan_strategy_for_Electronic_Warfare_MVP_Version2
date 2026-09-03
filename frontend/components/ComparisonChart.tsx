@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useMemo } from "react";
 import { useStore } from "@/lib/store";
 import { STRATEGY_COLORS, STRATEGY_LABELS, StrategyKey } from "@/lib/types";
+import SceneAnaloguePanel from "./SceneAnaloguePanel";
 
 const Plot = dynamic(() => import("./Plot"), { ssr: false });
 
@@ -25,26 +26,6 @@ export default function ComparisonChart() {
       line: { color: STRATEGY_COLORS[k], width: k === "smart" ? 2.5 : 1.3 },
     }));
   }, [rateHistory, tickHistory]);
-
-  const barData = useMemo(() => {
-    const names = STRATS.map((k) => STRATEGY_LABELS[k]);
-    return [
-      {
-        x: names,
-        y: STRATS.map((k) => metrics[k].pd),
-        name: "Pd",
-        type: "bar" as const,
-        marker: { color: "#22D3EE" },
-      },
-      {
-        x: names,
-        y: STRATS.map((k) => metrics[k].intercept_rate),
-        name: "Intercept Rate",
-        type: "bar" as const,
-        marker: { color: "#F5A623" },
-      },
-    ];
-  }, [metrics]);
 
   const baseLayout: any = {
     margin: { l: 44, r: 10, t: 24, b: 30 },
@@ -85,18 +66,8 @@ export default function ComparisonChart() {
             useResizeHandler
           />
         </div>
-        <div className="glass rounded-lg p-1">
-          <div className="px-2 pt-1 font-mono text-[9px] uppercase text-slate-500">
-            Final Pd / Intercept Rate (money shot)
-          </div>
-          <Plot
-            data={barData}
-            layout={{ ...baseLayout, barmode: "group", datarevision: tick }}
-            revision={tick}
-            config={{ displayModeBar: false, responsive: true }}
-            style={{ width: "100%", height: "180px" }}
-            useResizeHandler
-          />
+        <div className="glass rounded-lg p-2">
+          <SceneAnaloguePanel />
         </div>
       </div>
     </div>

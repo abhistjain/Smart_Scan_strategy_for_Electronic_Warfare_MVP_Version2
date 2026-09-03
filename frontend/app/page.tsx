@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createScenario, fetchTSRDSamples } from "@/lib/api";
 import type { DataSource, ScenarioCreateBody, TSRDSample } from "@/lib/types";
+import DrdoLogo from "@/components/DrdoLogo";
 
 type Mix = { markov: number; periodic: number; hopper: number; quiet: number };
 
@@ -107,10 +108,12 @@ export default function SetupPage() {
         <motion.header
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-8 flex items-start gap-4"
         >
+          <DrdoLogo size={72} className="mt-1 shadow-[0_0_24px_rgba(34,211,238,0.15)]" />
+          <div>
           <div className="font-mono text-[11px] uppercase tracking-[0.3em] text-cyan">
-            SIH26055 · Electronic Warfare
+            SIH26055 · Electronic Warfare · DRDO
           </div>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-100">
             Smart Scan Strategy — ES Receiver Scheduler
@@ -121,6 +124,7 @@ export default function SetupPage() {
             Thompson sampling, a Whittle-index scheduler, and periodicity-aware
             intercept-ahead tracking.
           </p>
+          </div>
         </motion.header>
 
         {/* data source toggle */}

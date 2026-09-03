@@ -24,6 +24,7 @@ derived from the Turing Synthetic Radar Dataset (TSRD).
 - [The TSRD dataset (Real Data mode)](#the-tsrd-dataset-real-data-mode)
 - [How the algorithms work (plain language)](#how-the-algorithms-work-plain-language)
 - [Figures of merit](#figures-of-merit)
+- [Emitter classification & AI Analyst (add-on)](#emitter-classification--ai-analyst-add-on)
 - [API reference](#api-reference)
 - [Testing & scientific validation](#testing--scientific-validation)
 - [Project layout](#project-layout)
@@ -248,6 +249,69 @@ Computed per strategy, live (`metrics/metrics.py`):
 
 ---
 
+## Emitter classification & AI Analyst (add-on)
+
+Two presentation-layer capabilities sit on top of the scheduler. **Both are
+strictly a sensing / classification / presentation aid.**
+
+> ### Hard scope boundary
+> This layer **never** selects, recommends, or pairs a weapon/interceptor
+> against a detected emitter; **never** computes trajectories, guidance, launch
+> envelopes, or engagement timing; and **never** makes an "engage/fire/
+> intercept-with-X" recommendation. It stops at *"here is what this signal's
+> pattern resembles, a plain-English description, and a relative priority for an
+> operator's attention"* — where priority only **sorts the dashboard**.
+
+### 1 · Signature-based behaviour classification (`backend/classification/`)
+
+Per band, a rolling feature vector is derived **only from operator-available
+data** (what the receiver observed when it scanned, the belief vector, and the
+existing periodicity output — never hidden ground truth):
+
+- `features.py` — duty cycle, burst/onset rate, agility (`hop_rate`), neighbour
+  co-activity (`bandwidth`), periodicity strength & period (from
+  `algo/periodicity.py`), period **trend** (for tightening detection), plus
+  amplitude/pulse-width proxies.
+- `classifier.py` — a **transparent rule-based** decision table mapping features
+  to illustrative behaviour-pattern labels — *Steady Comms-Like*,
+  *Scanning/Rotating-Pattern*, *Frequency-Agile / Hopping*, *Tightening-Pattern*
+  (flagged higher priority, phrased behaviour-first), or *Unclassified*. Every
+  call logs a `MATCHED_RULE` string for explainability, and carries a confidence
+  that grows with evidence. Labels are re-evaluated on a throttle with light
+  hysteresis so chips stay **stable**, not flickering.
+- `priority_score.py` — **Threat Priority Score** =
+  `w_belief·belief + w_conf·confidence + w_urgency·urgency`, where urgency comes
+  from the existing intercept-ahead "time to next active window". Weights are
+  live-adjustable in the UI and **only** sort the belief panel.
+
+> **Framing (shown in-app):** category labels describe *signal behaviour
+> patterns* and are illustrative analogues loosely inspired by general EW
+> literature — **not** a validated IFF system or real platform identification.
+
+### 2 · AI Analyst layer (`backend/ai_analyst/`)
+
+A thin Anthropic Claude wrapper (`claude_client.py`) powers three features:
+**live band narration**, an **operator chat panel**, and an **end-of-run
+summary report**. The chat's system prompt encodes the scope boundary above, so
+out-of-scope questions (e.g. *"which missile should intercept this?"*) are
+declined and redirected to signal-behaviour/scheduler topics.
+
+**Fully optional & fail-safe.** Everything above runs without any API key — set
+`ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`, default
+`claude-3-5-haiku-latest`) in `.env` to enable narration. If the key is missing
+or a call errors, the simulation, classification, priority sorting, and dashboard
+all keep working; AI panels simply show *"AI narration unavailable"*.
+
+### UI additions
+
+Classification chips + priority sort on the belief panel, a click-through **band
+detail popover** (narration, matched rule, priority breakdown, feature vector),
+a collapsible **AI Analyst chat** (with the priority-weight sliders), an
+**End-of-Run report modal**, and a **persistent disclaimer** shown wherever a
+label or score appears.
+
+---
+
 ## API reference
 
 REST (JSON):
@@ -261,6 +325,12 @@ REST (JSON):
 | GET | `/api/scenario/{id}/metrics/summary` | cumulative snapshot |
 | GET | `/api/scenario/{id}/export?fmt=csv\|json` | run-history export |
 | GET | `/api/data/tsrd/samples` | list cached TSRD samples for the picker |
+| GET | `/api/scenario/{id}/band/{band}` | band detail: classification, priority breakdown, features |
+| POST | `/api/scenario/{id}/priority-weights` | set Threat-Priority-Score weights (sort-only) |
+| GET | `/api/ai/status` | AI Analyst availability (key present / model) |
+| POST | `/api/ai/narrate-band` | 1–2 sentence narration for one band (cached per label) |
+| POST | `/api/ai/chat` | scope-bounded operator chat over a scenario snapshot |
+| POST | `/api/ai/summarize-run` | end-of-run written summary of the run |
 | GET | `/api/health` | liveness |
 
 WebSocket: `WS /ws/scenario/{id}` streams one JSON tick per timestep with, per
@@ -282,8 +352,10 @@ Covers: the belief filter against a **hand-computed 3-step toy example**, Whittl
 index **monotonicity** (both correlation regimes) + continuity + boundary values,
 synthetic environment transition/period/hop statistics + observation-noise model,
 Thompson posterior concentration, periodicity detection (including validation
-against TSRD-derived periodic emitters), and the TSRD cache pipeline + loader on a
-small in-process fixture.
+against TSRD-derived periodic emitters), the TSRD cache pipeline + loader on a
+small in-process fixture, and the **behaviour classifier** — feature extraction
+and rule matching on hand-crafted periodic / hopping / steady / tightening bands,
+plus priority-score/urgency ordering (`tests/test_classification.py`).
 
 Headless comparison (asserts smart beats all baselines on both modes):
 
@@ -314,6 +386,8 @@ smart-scan-ew/
 │   ├── sim/                         # base_environment, synthetic_environment, tsrd_environment
 │   ├── algo/                        # belief_filter, thompson, whittle_index, periodicity,
 │   │                                #   baselines, reward, smart_scheduler
+│   ├── classification/             # features, classifier (rule-based), priority_score, engine
+│   ├── ai_analyst/                 # claude_client (graceful), prompts (scope-bounded)
 │   ├── metrics/metrics.py
 │   ├── api/                         # main (FastAPI), schemas, simulation orchestrator
 │   ├── tests/                       # pytest suite
@@ -322,7 +396,9 @@ smart-scan-ew/
 │   ├── app/                         # setup wizard (/) + dashboard (/dashboard)
 │   ├── components/                  # SpectrumHeatmap, BeliefBarPanel, MetricsRow,
 │   │                                #   ComparisonChart, PeriodicityRadar, ScenarioControls,
-│   │                                #   DatasetAttributionFooter, TopMHighlightOverlay, AboutDrawer
+│   │                                #   DatasetAttributionFooter, TopMHighlightOverlay, AboutDrawer,
+│   │                                #   AiAnalystPanel, BandDetailPopover, EndOfRunModal,
+│   │                                #   ClassificationDisclaimer
 │   └── lib/                         # ws-client, store (zustand), api, types
 ├── .env.example
 └── README.md

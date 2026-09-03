@@ -16,6 +16,10 @@ import PeriodicityRadar from "@/components/PeriodicityRadar";
 import TopMHighlightOverlay from "@/components/TopMHighlightOverlay";
 import DatasetAttributionFooter from "@/components/DatasetAttributionFooter";
 import AboutDrawer from "@/components/AboutDrawer";
+import AiAnalystPanel from "@/components/AiAnalystPanel";
+import BandDetailPopover from "@/components/BandDetailPopover";
+import EndOfRunModal from "@/components/EndOfRunModal";
+import ClassificationDisclaimer from "@/components/ClassificationDisclaimer";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -29,6 +33,8 @@ export default function DashboardPage() {
   const tick = useStore((s) => s.tick);
 
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const wsRef = useRef<WSClient | null>(null);
   const audioCtx = useRef<AudioContext | null>(null);
 
@@ -82,9 +88,25 @@ export default function DashboardPage() {
   }, [tick]);
 
   return (
-    <main className={`grid-bg min-h-screen p-3 ${highContrast ? "high-contrast" : ""}`}>
+    <main className={`grid-bg min-h-screen p-3 pb-8 ${highContrast ? "high-contrast" : ""}`}>
       <div className="mx-auto flex max-w-[1800px] flex-col gap-3">
         <ScenarioControls onAbout={() => setAboutOpen(true)} />
+
+        {/* Add-on quick actions: AI analyst + end-of-run report */}
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={() => setReportOpen(true)}
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-slate-300 hover:border-cyan/40 hover:text-cyan"
+          >
+            📄 Run Report
+          </button>
+          <button
+            onClick={() => setAiOpen(true)}
+            className="rounded-lg border border-cyan/30 bg-cyan/10 px-3 py-1.5 font-mono text-xs text-cyan hover:bg-cyan/20"
+          >
+            ✦ AI Analyst
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_320px]">
           {/* Hero: spectrum waterfall */}
@@ -123,6 +145,10 @@ export default function DashboardPage() {
       </div>
 
       <AboutDrawer open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      <AiAnalystPanel open={aiOpen} onClose={() => setAiOpen(false)} />
+      <EndOfRunModal open={reportOpen} onClose={() => setReportOpen(false)} />
+      <BandDetailPopover />
+      <ClassificationDisclaimer variant="footer" />
     </main>
   );
 }

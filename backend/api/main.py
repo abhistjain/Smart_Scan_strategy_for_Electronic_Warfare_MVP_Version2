@@ -20,14 +20,39 @@ import csv
 import io
 import json
 import uuid
+from pathlib import Path
 from typing import Dict
+
+from dotenv import load_dotenv
+
+# Load the repo-root .env (and backend/.env if present) BEFORE importing modules
+# that read environment variables. uvicorn does not load .env files itself, so
+# without this ANTHROPIC_API_KEY / ANTHROPIC_MODEL / HF_TOKEN stay unset.
+_HERE = Path(__file__).resolve()
+load_dotenv(_HERE.parents[2] / ".env")  # F:\DRDO-SIH\.env
+load_dotenv(_HERE.parents[1] / ".env")  # F:\DRDO-SIH\backend\.env (optional override)
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from api.schemas import ScenarioCreate, SpeedUpdate
+from api.schemas import (
+    ChatBody,
+    NarrateBandBody,
+    PriorityWeightsBody,
+    ScenarioCreate,
+    SpeedUpdate,
+    SummarizeRunBody,
+)
 from api.simulation import ScenarioConfig, Simulation
+from ai_analyst.claude_client import get_client
+from ai_analyst.prompts import (
+    SCOPE_SYSTEM,
+    build_chat_prompt,
+    build_narrate_prompt,
+    build_summary_prompt,
+    fallback_narration,
+)
 from sim.tsrd_environment import list_cached_samples
 
 app = FastAPI(title="Smart Scan Strategy for EW - ES Receiver Scheduler", version="0.1.0")
@@ -52,6 +77,9 @@ class ScenarioRunner:
         self.clients: set[WebSocket] = set()
         self._task: asyncio.Task | None = None
         self._latest: dict | None = None
+        # Band narration cache keyed by band -> (label, text). Regenerated only
+        # when a band's classification label changes (debounce, Section 3.2a).
+        self.narration_cache: dict[int, tuple[str, str]] = {}
 
     async def _loop(self) -> None:
         try:
@@ -231,6 +259,106 @@ def tsrd_samples() -> dict:
 @app.get("/api/health")
 def health() -> dict:
     return {"status": "ok", "scenarios": len(SCENARIOS)}
+
+
+# --------------------------------------------------------------------------- #
+# v3 add-on: classification + priority
+# --------------------------------------------------------------------------- #
+
+
+@app.get("/api/scenario/{scenario_id}/band/{band}")
+def band_detail(scenario_id: str, band: int) -> dict:
+    runner = _get(scenario_id)
+    if band < 0 or band >= runner.sim.n_bands:
+        raise HTTPException(status_code=404, detail="band out of range")
+    return runner.sim.band_detail(band)
+
+
+@app.post("/api/scenario/{scenario_id}/priority-weights")
+def set_priority_weights(scenario_id: str, body: PriorityWeightsBody) -> dict:
+    runner = _get(scenario_id)
+    runner.sim.set_priority_weights(body.w_belief, body.w_conf, body.w_urgency)
+    return {"ok": True, "weights": body.model_dump()}
+
+
+# --------------------------------------------------------------------------- #
+# v3 add-on: AI analyst (all endpoints degrade gracefully without an API key)
+# --------------------------------------------------------------------------- #
+
+
+@app.get("/api/ai/status")
+def ai_status() -> dict:
+    return get_client().status()
+
+
+@app.post("/api/ai/narrate-band")
+def ai_narrate_band(body: NarrateBandBody) -> dict:
+    runner = _get(body.scenario_id)
+    if body.band < 0 or body.band >= runner.sim.n_bands:
+        raise HTTPException(status_code=404, detail="band out of range")
+    detail = runner.sim.band_detail(body.band)
+    label = detail.get("classification", {}).get("label", "")
+
+    # Debounce: reuse cached narration unless the label changed or force=True.
+    cached = runner.narration_cache.get(body.band)
+    if cached and cached[0] == label and not body.force:
+        return {"available": True, "text": cached[1], "cached": True, "detail": detail}
+
+    result = get_client().generate(
+        build_narrate_prompt(detail), max_tokens=180, system=SCOPE_SYSTEM
+    )
+    text = result.text if result.available else fallback_narration(detail)
+    if result.available:
+        runner.narration_cache[body.band] = (label, text)
+    return {
+        "available": True,
+        "text": text,
+        "cached": False,
+        "error": result.error,
+        "source": "claude" if result.available else "local",
+        "detail": detail,
+    }
+
+
+@app.post("/api/ai/chat")
+def ai_chat(body: ChatBody) -> dict:
+    runner = _get(body.scenario_id)
+    snapshot = {
+        "tick": runner.sim.t,
+        "data_source": runner.sim.cfg.data_source,
+        "aggregate_metrics": runner.sim.metrics_summary(),
+        "top_bands_by_priority": [
+            {
+                "band": d["band"],
+                "label": d.get("label"),
+                "behaviour": d["classification"]["label"],
+                "confidence": d["classification"]["confidence"],
+                "priority": d["priority"],
+                "belief": d["belief"],
+            }
+            for d in runner.sim.top_bands(body.top_n)
+        ],
+    }
+    result = get_client().generate(
+        build_chat_prompt(body.question, snapshot),
+        max_tokens=500,
+        system=SCOPE_SYSTEM,
+    )
+    return {"available": result.available, "text": result.text, "error": result.error}
+
+
+@app.post("/api/ai/summarize-run")
+def ai_summarize_run(body: SummarizeRunBody) -> dict:
+    runner = _get(body.scenario_id)
+    metrics = runner.sim.metrics_summary()
+    classifications = runner.sim.top_bands(8)
+    periodicity = runner.sim.strategies["smart"].periodicity_summary()
+    result = get_client().generate(
+        build_summary_prompt(metrics, classifications, periodicity),
+        max_tokens=700,
+        system=SCOPE_SYSTEM,
+    )
+    return {"available": result.available, "text": result.text, "error": result.error}
 
 
 # --------------------------------------------------------------------------- #
